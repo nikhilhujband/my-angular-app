@@ -1,0 +1,59 @@
+<!-- Navigation Bar -->
+<nav
+  *ngIf="router.url !== '/login'"
+  class="navbar navbar-expand-lg navbar-light bg-light">
+
+  <div class="container-fluid">
+
+    <a class="navbar-brand" routerLink="/home">
+      My Application
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNavAltMarkup">
+
+      <span class="navbar-toggler-icon"></span>
+
+    </button>
+
+    <div
+      class="collapse navbar-collapse"
+      id="navbarNavAltMarkup">
+
+      <div class="navbar-nav">
+
+        <a
+          class="nav-link"
+          routerLink="/home"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }">
+          Home
+        </a>
+
+        <a
+          class="nav-link"
+          routerLink="/about"
+          routerLinkActive="active">
+          About
+        </a>
+
+        <a
+          class="nav-link"
+          routerLink="/employee"
+          routerLinkActive="active">
+          Employee
+        </a>
+
+      </div>
+
+    </div>
+  </div>
+</nav>
+
+<!-- Page Content -->
+<div class="container-fluid">
+  <router-outlet></router-outlet>
+</div>
