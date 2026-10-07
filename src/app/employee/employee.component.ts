@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef } from 'ag-grid-community';
 import { EmployeeDialogComponent } from './employee-dialog/employee-dialog.component';
@@ -14,7 +14,7 @@ import { EmployeeService, Employee } from '../service/employee.service';
 })
 
 
-export class EmployeeComponent {
+export class EmployeeComponent implements OnInit {
 
 showDialog = false;
 isEditMode = false;
@@ -25,9 +25,16 @@ employees: Employee[] = [];
   constructor(private employeeService: EmployeeService) {
 }
 
-  ngOnInit(): void {
-    this.employees = this.employeeService.getEmployees();
-  }
+ ngOnInit(): void {
+  this.employeeService.getEmployees().subscribe({
+    next: (data) => {
+      this.employees = data;
+    },
+    error: (error) => {
+      console.error('Error loading employees:', error);
+    }
+  });
+}
 
 columnDefs: ColDef[] = [
   { field: 'name', headerName: 'Name' },
@@ -35,16 +42,32 @@ columnDefs: ColDef[] = [
   { field: 'email', headerName: 'Email' },
   { field: 'department', headerName: 'Department' },
   { field: 'salary', headerName: 'Salary' },
-
   {
-    headerName: 'Action',
-    cellRenderer: () => {
-      return '<button class="btn btn-sm btn-primary">Edit</button>';
-    },
-    onCellClicked: (params: any) => {
+  headerName: 'Action',
+  cellRenderer: () => {
+    return `
+      <button class="btn btn-sm btn-primary me-2" data-action="edit">
+        Edit
+      </button>
+      <button class="btn btn-sm btn-danger" data-action="delete">
+        Delete
+      </button>
+    `;
+  },
+
+  onCellClicked: (params: any) => {
+
+    const action = params.event.target.getAttribute('data-action');
+
+    if (action === 'edit') {
       this.editEmployee(params.data);
     }
+
+    if (action === 'delete') {
+      this.deleteEmployee(params.data.id);
+    }
   }
+}
 ];
 
 openDialog(): void {
@@ -65,26 +88,61 @@ closeDialog(): void {
 
 addEmployee(employee: Employee): void {
 
-  const newEmployee = {
-    ...employee,
-    id: this.employees.length + 1
-  };
+  this.employeeService.addEmployee(employee).subscribe({
+    next: (newEmployee) => {
+      this.employees = [...this.employees, newEmployee];
+      this.showDialog = false;
+    },
+    error: (error) => {
+      console.error('Error adding employee:', error);
+    }
+  });
 
-  this.employees = [...this.employees, newEmployee];
-
-  this.showDialog = false;
 }
 
 updateEmployee(updatedEmployee: Employee): void {
 
-  this.employees = this.employees.map(employee =>
-    employee.id === updatedEmployee.id
-      ? updatedEmployee
-      : employee
-  );
+  this.employeeService.updateEmployee(updatedEmployee).subscribe({
+    next: (updatedEmployeeFromApi) => {
 
-  this.showDialog = false;
-  this.selectedEmployee = null;
-  this.isEditMode = false;
+      this.employees = this.employees.map(employee =>
+        employee.id === updatedEmployeeFromApi.id
+          ? updatedEmployeeFromApi
+          : employee
+      );
+
+      this.showDialog = false;
+      this.selectedEmployee = null;
+      this.isEditMode = false;
+    },
+
+    error: (error) => {
+      console.error('Error updating employee:', error);
+    }
+  });
+}
+
+deleteEmployee(id: number): void {
+
+  this.employeeService.deleteEmployee(id).subscribe({
+    next: () => {
+
+      // Reload employees from API
+      this.employeeService.getEmployees().subscribe({
+        next: (data) => {
+          this.employees = data;
+        },
+        error: (error) => {
+          console.error('Error loading employees:', error);
+        }
+      });
+
+    },
+
+    error: (error) => {
+      console.error('Error deleting employee:', error);
+    }
+  });
+
 }
 }
